@@ -20,10 +20,11 @@ services:
       - "3000:3000"  # Map host port 3000 to container port 3000
     volumes:
       - ./frontend:/app  # Mount the entire frontend directory for live code updates (including components, etc.)
-      - /app/node_modules  # Prevent overwriting of node_modules in the container
+      - /app/node_modules
     env_file: "./frontend/.env"
     environment:
       - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1  # Disable telemetry for faster startup
     command: npm run dev  # Start the Next.js dev server with hot-reloading
     restart: always
 
@@ -34,7 +35,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: jobseeker_analytics
+      POSTGRES_DB: email-scraper
     volumes:
       - postgres_data:/var/lib/postgresql/data  # Persist database data
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
