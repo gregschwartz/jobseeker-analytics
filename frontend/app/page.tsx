@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button, Card, Tabs, Tab } from "@heroui/react";
 
 import { UsersIcon, LineChartIcon, CheckCircle2Icon, PlayIcon } from "@/components/icons";
-import { Navbar } from "@/components/navbar";
 import { GoogleLoginButton } from "@/components/GoogleLoginButton";
 import Footer from "@/components/Footer";
 import WaitlistForm from "@/components/WaitlistForm";
@@ -21,7 +20,6 @@ const Index = () => {
 	return (
 		<div className="flex flex-col min-h-screen">
 			<main className="flex-grow bg-gradient-to-b from-background to-background/95">
-				<Navbar /> {/* Place the Navbar at the top level */}
 				<div className="container mx-auto px-4 py-6 space-y-16">
 					<HeroSection />
 

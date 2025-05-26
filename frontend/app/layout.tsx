@@ -3,6 +3,7 @@ import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 
 import { Providers, PostHogProvider } from "./providers";
+import { Navbar } from "@/components/Navbar";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
@@ -31,8 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			<head />
 			<body className={clsx("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
 				<PostHogProvider>
-					<Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
+				<Providers themeProps={{ attribute: "class", defaultTheme: "system", enableSystem: true, disableTransitionOnChange: false, forcedTheme: "system" }}>
 						<div className="relative flex h-screen flex-col">
+							<Navbar />
 							<main className="container mx-auto flex-grow max-w-7xl px-6 pt-16">{children}</main>
 						</div>
 					</Providers>
