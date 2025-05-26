@@ -303,9 +303,31 @@ export default function JobApplicationsDashboard({
 				</Button>
 			</div>
 
-			{loading ? (
+			{loading && (
 				<p>Loading applications...</p>
-			) : (
+			)}
+			{!loading && paginatedData.length === 0 && (
+				<div>
+					<p>No applications found</p>
+					<div className="flex gap-2">
+						<Button
+							color="primary"
+							size="sm"
+							onPress={() => setShowModal(true)}
+						>
+							Change Start Date
+						</Button>
+						<Button
+							color="primary" 
+							size="sm"
+							onPress={onRescanEmails}
+						>
+							Rescan Emails
+						</Button>
+					</div>
+				</div>
+			)}
+			{!loading && paginatedData.length > 0 && (
 				<div className="overflow-x-auto bg-white dark:bg-black shadow-md rounded-lg">
 					<Table aria-label="Applications Table">
 						<TableHeader>
@@ -318,31 +340,6 @@ export default function JobApplicationsDashboard({
 							<TableColumn>Actions</TableColumn>
 						</TableHeader>
 						<TableBody>
-							{!paginatedData || paginatedData.length === 0 && (
-								<TableRow>
-									<TableCell colSpan={7} className="text-center">
-										<div className="flex flex-col items-center gap-4 py-4">
-											<p>No applications found</p>
-											<div className="flex gap-2">
-												<Button
-													color="primary"
-													size="sm"
-													onPress={() => setShowModal(true)}
-												>
-													Change Start Date
-												</Button>
-												<Button
-													color="primary" 
-													size="sm"
-													onPress={onRescanEmails}
-												>
-													Rescan Emails
-												</Button>
-											</div>
-										</div>
-									</TableCell>
-								</TableRow>
-							)}
 							{paginatedData.map((item) => (
 								<TableRow
 									key={item.id || item.received_at}
