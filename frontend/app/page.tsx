@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Button, Card, Tabs, Tab } from "@heroui/react";
 
 import { UsersIcon, LineChartIcon, CheckCircle2Icon, PlayIcon } from "@/components/icons";
-import { Navbar } from "@/components/navbar"; // Import the Navbar
+import { Navbar } from "@/components/navbar";
+import { GoogleLoginButton } from "@/components/GoogleLoginButton";
 import Footer from "@/components/Footer";
 import WaitlistForm from "@/components/WaitlistForm";
 import DeveloperInfo from "@/components/DeveloperInfo";
@@ -26,16 +27,26 @@ const Index = () => {
 
 					<div className="max-w-4xl mx-auto">
 						<Tabs aria-label="Options" selectedKey={tab} onSelectionChange={(key) => setTab(key as string)}>
-							<Tab key="waitlist" title="Join Waitlist">
-								<div className="space-y-4 mt-4">
-									<WaitlistForm />
-								</div>
-							</Tab>
-							<Tab key="developer" id="run_local" title="Run Locally">
-								<div className="space-y-4 mt-4">
-									<DeveloperInfo />
-								</div>
-							</Tab>
+							{typeof window !== 'undefined' && window.location.hostname === 'localhost' ? (
+								<Tab key="googleLogin" title="Login tab">
+									<div className="space-y-4 mt-4">
+										<GoogleLoginButton />
+									</div>
+								</Tab>
+							) : (
+								<>
+								<Tab key="waitlist" title="Join Waitlist">
+									<div className="space-y-4 mt-4">
+										<WaitlistForm />
+									</div>
+								</Tab>
+								<Tab key="developer" id="run_local" title="Run Locally">
+									<div className="space-y-4 mt-4">
+										<DeveloperInfo />
+									</div>
+								</Tab>
+								</>
+							)}
 						</Tabs>
 					</div>
 

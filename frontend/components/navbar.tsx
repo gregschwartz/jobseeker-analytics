@@ -19,6 +19,7 @@ import NextLink from "next/link";
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { GithubIcon, HeartFilledIcon, GoogleIcon, LogOutIcon, InfoIcon } from "@/components/icons";
+import { GoogleLoginButton } from "./GoogleLoginButton";
 
 export const Navbar = () => {
 	const pathname = usePathname();
@@ -85,24 +86,7 @@ export const Navbar = () => {
 				</NavbarItem>
 				<NavbarItem>
 					{pathname === "/" || pathname.startsWith("/preview") ? (
-						<Tooltip
-							closeDelay={0}
-							color="foreground"
-							content={loginTooltipContent}
-							delay={200}
-							placement="bottom"
-						>
-							<Button
-								className="w-full text-sm font-normal text-default-600 bg-default-100"
-								data-testid="GoogleLogin"
-								endContent={<InfoIcon className="text-default-400" size={14} />}
-								startContent={<GoogleIcon className="text-danger" />}
-								variant="flat"
-								onPress={handleGoogleLogin}
-							>
-								Login with Google
-							</Button>
-						</Tooltip>
+						<GoogleLoginButton />
 					) : (
 						<Button
 							className="w-full text-sm font-normal text-default-600 bg-default-100"
