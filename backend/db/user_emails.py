@@ -1,5 +1,8 @@
 from sqlmodel import SQLModel, Field
 from datetime import datetime
+from typing import Optional
+from sqlalchemy import Column, TEXT
+
 
 class UserEmails(SQLModel, table=True):
     __tablename__ = "user_emails"  
@@ -11,3 +14,4 @@ class UserEmails(SQLModel, table=True):
     subject: str
     job_title: str
     email_from: str  # to avoid 'from' being a reserved key word
+    interview_briefing: Optional[str] = Field(default=None, sa_column=Column(TEXT), nullable=True)

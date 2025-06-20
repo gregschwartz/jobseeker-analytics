@@ -119,6 +119,7 @@ _Estimated time: 3-5 minutes_
 2. Edit `backend/.env` to put in your own credentials, particularly 
    - Google OAuth Client ID goes in `GOOGLE_CLIENT_ID`
    - Google AI API key goes in `GOOGLE_API_KEY`
+   - Apify API key (for LinkedIn data fetching) goes in `APIFY_API_KEY`
    - Type a random string in `COOKIE_SECRET`
 
    **🔒 Never share your `.env` file or commit it to Git!**  

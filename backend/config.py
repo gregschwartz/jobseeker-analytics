@@ -2,7 +2,7 @@ import json
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
-from typing import List
+from typing import List, Optional # Added Optional
 from typing_extensions import Annotated
 import logging
 
@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     CLIENT_SECRETS_FILE: str = "credentials.json"
     ENV: str = "dev"
     APP_URL: str
+    APIFY_API_KEY: Optional[str] = None # Added APIFY_API_KEY
     ORIGIN: str = ".jobba.help"
     DATABASE_URL: str = "default-for-local"
     DATABASE_URL_LOCAL_VIRTUAL_ENV: str = (

@@ -9,7 +9,7 @@ from db import processing_tasks as task_models
 from db.utils.user_email_utils import create_user_email
 from utils.auth_utils import AuthenticatedUser
 from utils.email_utils import get_email_ids, get_email
-from utils.llm_utils import process_email
+from utils.llm_utils import process_email, generate_interview_briefing
 from utils.config_utils import get_settings
 from session.session_layer import validate_session
 import database
@@ -272,14 +272,55 @@ def fetch_emails_to_db(user: AuthenticatedUser, request: Request, last_updated: 
                     )
                     result = {"company_name": "unknown", "application_status": "unknown", "job_title": "unknown"}
 
+                interview_briefing_json = None
+                job_application_status = result.get("job_application_status", "unknown")
+
+                if job_application_status.lower().strip() == "interview invitation":
+                    logger.info(
+                        f"user_id:{user_id} Interview invitation detected for email id {msg_id} from company: {result.get('company_name')}"
+                    )
+                    company_name = result.get("company_name")
+                    interviewer_names = []  # Placeholder for now
+
+                    if company_name and company_name.lower() != "unknown":
+                        try:
+                            logger.info(
+                                f"user_id:{user_id} Generating interview briefing for company: {company_name}"
+                            )
+                            briefing_data = generate_interview_briefing(
+                                company_name, interviewer_names
+                            )
+                            if briefing_data and not briefing_data.get("error"):
+                                interview_briefing_json = json.dumps(briefing_data)
+                                logger.info(
+                                    f"user_id:{user_id} Successfully generated interview briefing for {company_name}"
+                                )
+                            elif briefing_data and briefing_data.get("error"):
+                                logger.error(
+                                    f"user_id:{user_id} Failed to generate interview briefing for {company_name}: {briefing_data.get('error')}"
+                                )
+                            else:
+                                logger.warning(
+                                    f"user_id:{user_id} Received no data or unexpected response from generate_interview_briefing for {company_name}"
+                                )
+                        except Exception as e:
+                            logger.error(
+                                f"user_id:{user_id} Exception during interview briefing generation for {company_name}: {e}"
+                            )
+                    else:
+                        logger.warning(
+                            f"user_id:{user_id} Cannot generate interview briefing for email id {msg_id} due to missing or unknown company name."
+                        )
+
                 message_data = {
                     "id": msg_id,
                     "company_name": result.get("company_name", "unknown"),
-                    "application_status": result.get("job_application_status", "unknown"),
+                    "application_status": job_application_status,
                     "received_at": msg.get("date", "unknown"),
                     "subject": msg.get("subject", "unknown"),
                     "job_title": result.get("job_title", "unknown"),
                     "from": msg.get("from", "unknown"),
+                    "interview_briefing": interview_briefing_json, # Add briefing here
                 }
                 email_record = create_user_email(user, message_data)
                 if email_record:
