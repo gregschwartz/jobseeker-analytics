@@ -8,7 +8,7 @@ from db.user_emails import UserEmails
 from db import processing_tasks as task_models
 from db.utils.user_email_utils import create_user_email
 from utils.auth_utils import AuthenticatedUser
-from utils.email_utils import get_email_ids, get_email
+from utils.email_utils import get_email_ids, get_email, archive_email_in_gmail # Added archive_email_in_gmail
 from utils.llm_utils import process_email
 from utils.config_utils import get_settings
 from session.session_layer import validate_session
@@ -256,16 +256,32 @@ def fetch_emails_to_db(user: AuthenticatedUser, request: Request, last_updated: 
                     logger.error(
                         f"user_id:{user_id} Error processing email {idx + 1} of {len(messages)} with id {msg_id}: {e}"
                     )
+                    # Ensure result is initialized in case of an error before this point
+                    result = {"company_name": "unknown", "application_status": "unknown", "job_title": "unknown"}
+
 
                 if not isinstance(result, str) and result:
                     logger.info(
                         f"user_id:{user_id} successfully extracted email {idx + 1} of {len(messages)} with id {msg_id}"
                     )
-                    if result.get("job_application_status").lower().strip() == "false positive":
+                    application_status = result.get("job_application_status", "unknown").lower().strip()
+                    if application_status == "false positive":
                         logger.info(
                             f"user_id:{user_id} email {idx + 1} of {len(messages)} with id {msg_id} is a false positive, not related to job search"
                         )
                         continue  # skip this email if it's a false positive
+                    elif application_status == "rejection":
+                        logger.info(
+                            f"user_id:{user_id} email {idx + 1} of {len(messages)} with id {msg_id} is a rejection, attempting to archive."
+                        )
+                        try:
+                            # Pass the gmail_instance (service) and msg_id
+                            archive_email_in_gmail(service, msg_id, user_id)
+                        except Exception as e:
+                            logger.error(
+                                f"user_id:{user_id} Failed to archive email {msg_id}: {e}"
+                            )
+                        # Continue to save the email to DB even if archiving fails or succeeds
                 else:  # processing returned unknown which is also likely false positive
                     logger.warning(
                         f"user_id:{user_id} failed to extract email {idx + 1} of {len(messages)} with id {msg_id}"
