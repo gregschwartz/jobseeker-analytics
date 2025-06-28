@@ -42,9 +42,20 @@ def archive_email_in_gmail(service, message_id: str, user_id: str):
             logger.info(f"user_id:{user_id} Email {message_id} is not in INBOX. No action taken.")
 
     except HttpError as error:
-        logger.error(f"user_id:{user_id} An API error occurred while trying to archive email {message_id}: {error}")
-        # Depending on requirements, you might want to re-raise the error
-        # or handle it specifically (e.g., retry logic for certain errors)
+        if error.resp.status == 403:
+            logger.error(
+                f"user_id:{user_id} Insufficient permissions (403 Forbidden) while trying to archive email {message_id}. "
+                f"This likely means the application lacks the 'gmail.modify' scope. Error: {error}"
+            )
+            # You might want to raise a specific custom exception here to be caught by the caller
+            # e.g., raise InsufficientPermissionsError(f"Missing gmail.modify scope for user {user_id}")
+            # For now, re-raising the original error after logging.
+            raise  # Re-raise the HttpError to be handled by the caller in email_routes.py
+        else:
+            logger.error(
+                f"user_id:{user_id} An API error occurred (status: {error.resp.status}) while trying to archive email {message_id}: {error}"
+            )
+            raise # Re-raise other HttpErrors
     except Exception as e:
         logger.error(f"user_id:{user_id} An unexpected error occurred while archiving email {message_id}: {e}")
-        # Handle other unexpected errors
+        raise # Re-raise unexpected errors

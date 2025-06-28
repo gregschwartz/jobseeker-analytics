@@ -168,4 +168,90 @@ def test_clean_whitespace():
     assert email_utils.clean_whitespace("nowhitespace") == "nowhitespace"
     assert email_utils.clean_whitespace("") == ""
     assert email_utils.clean_whitespace(None) == ""
+
+
+# Tests for archive_email_in_gmail
+# Need to import HttpError for testing error conditions
+from googleapiclient.errors import HttpError
+from unittest.mock import MagicMock, patch
+
+@patch('utils.email_utils.logger') # Patch logger to check log messages
+def test_archive_email_in_gmail_inbox_success(mock_logger):
+    mock_service = MagicMock()
+    mock_message_get = mock_service.users().messages().get
+    mock_message_get.return_value.execute.return_value = {'labelIds': ['INBOX', 'IMPORTANT']}
+
+    mock_message_modify = mock_service.users().messages().modify
+
+    email_utils.archive_email_in_gmail(mock_service, "test_msg_id", "test_user_id")
+
+    mock_message_get.assert_called_once_with(userId='me', id='test_msg_id', format='metadata', metadataHeaders=['labelIds'])
+    mock_message_modify.assert_called_once_with(userId='me', id='test_msg_id', body={'removeLabelIds': ['INBOX']})
+    mock_logger.info.assert_any_call("user_id:test_user_id Email test_msg_id is in INBOX. Archiving...")
+    mock_logger.info.assert_any_call("user_id:test_user_id Email test_msg_id archived successfully.")
+
+@patch('utils.email_utils.logger')
+def test_archive_email_in_gmail_not_in_inbox(mock_logger):
+    mock_service = MagicMock()
+    mock_message_get = mock_service.users().messages().get
+    mock_message_get.return_value.execute.return_value = {'labelIds': ['IMPORTANT', 'CATEGORY_UPDATES']}
+
+    mock_message_modify = mock_service.users().messages().modify
+
+    email_utils.archive_email_in_gmail(mock_service, "test_msg_id", "test_user_id")
+
+    mock_message_get.assert_called_once_with(userId='me', id='test_msg_id', format='metadata', metadataHeaders=['labelIds'])
+    mock_message_modify.assert_not_called()
+    mock_logger.info.assert_any_call("user_id:test_user_id Email test_msg_id is not in INBOX. No action taken.")
+
+@patch('utils.email_utils.logger')
+def test_archive_email_in_gmail_http_error_403(mock_logger):
+    mock_service = MagicMock()
+    # Simulate an HttpError with status 403
+    http_error_403 = HttpError(resp=MagicMock(status=403), content=b'Forbidden')
+    mock_message_get = mock_service.users().messages().get
+    mock_message_get.return_value.execute.side_effect = http_error_403
+
+    with pytest.raises(HttpError) as excinfo:
+        email_utils.archive_email_in_gmail(mock_service, "test_msg_id", "test_user_id")
+
+    assert excinfo.value.resp.status == 403
+    mock_logger.error.assert_any_call(
+        "user_id:test_user_id Insufficient permissions (403 Forbidden) while trying to archive email test_msg_id. "
+        "This likely means the application lacks the 'https://www.googleapis.com/auth/gmail.labels' "
+        "(or 'https://www.googleapis.com/auth/gmail.modify') scope. Error: %s",
+        http_error_403
+    )
+
+@patch('utils.email_utils.logger')
+def test_archive_email_in_gmail_http_error_other(mock_logger):
+    mock_service = MagicMock()
+    # Simulate an HttpError with a status other than 403
+    http_error_500 = HttpError(resp=MagicMock(status=500), content=b'Internal Server Error')
+    mock_message_get = mock_service.users().messages().get
+    mock_message_get.return_value.execute.side_effect = http_error_500
     
+    with pytest.raises(HttpError) as excinfo:
+        email_utils.archive_email_in_gmail(mock_service, "test_msg_id", "test_user_id")
+
+    assert excinfo.value.resp.status == 500
+    mock_logger.error.assert_any_call(
+        "user_id:test_user_id An API error occurred (status: 500) while trying to archive email test_msg_id: %s",
+        http_error_500
+    )
+
+@patch('utils.email_utils.logger')
+def test_archive_email_in_gmail_other_exception(mock_logger):
+    mock_service = MagicMock()
+    generic_exception = Exception("Something went wrong")
+    mock_message_get = mock_service.users().messages().get
+    mock_message_get.return_value.execute.side_effect = generic_exception
+
+    with pytest.raises(Exception) as excinfo:
+        email_utils.archive_email_in_gmail(mock_service, "test_msg_id", "test_user_id")
+
+    assert excinfo.value is generic_exception
+    mock_logger.error.assert_any_call(
+        "user_id:test_user_id An unexpected error occurred while archiving email test_msg_id: %s",
+        generic_exception
+    )
